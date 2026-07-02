@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'git@github.com:AngadVM/Reddit-Project.git'
+                git branch: 'main', url: 'https://github.com/AngadVM/Reddit-Project.git'
             }
         }
         stage('Initializing Terraform') {
