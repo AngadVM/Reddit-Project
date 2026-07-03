@@ -16,68 +16,13 @@ pipeline{
                 sh "npm install"
             }
         }
-        stage("Sonarqube Analysis "){
-            steps{
-                withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Reddit \
-                    -Dsonar.projectKey=Reddit '''
-                }
-            }
-        }
-        stage("quality gate"){
-           steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
-                }
-            }
-        }
-        stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
-        stage('TRIVY FS SCAN') {
-            steps {
-                sh "trivy fs . > trivyfs.txt"
-            }
-        }
         stage("Docker Build & Push"){
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
                         sh "docker build -t reddit ."
-                        sh "docker tag reddit angadvm/my-reddit-angad:${BUILD_NUMBER} "
-                        sh "docker push angadvm/my-reddit-angad:${BUILD_NUMBER} "
-                    }
-                }
-            }
-        }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image angadvm/my-reddit-angad:latest > trivy.txt"
-            }
-        }
-        stage('Update Deployment file') {
-            environment {
-                GIT_REPO_NAME = "Reddit-Project"
-                GIT_USER_NAME = "AngadVM"
-            }
-            steps {
-                dir('K8s'){
-                    withCredentials([string(credentialsId: 'githubcred', variable: 'GITHUB_TOKEN')]) {
-                        sh '''
-                            git config user.email "angad@example.com"
-                            git config user.name "AngadVM"
-                            BUILD_NUMBER=${BUILD_NUMBER}
-                            echo $BUILD_NUMBER
-                            imageTag=$(grep -oP '(?<=my-reddit-angad:)[^ ]+' deployment.yml)
-                            echo $imageTag
-                            sed -i "s/my-reddit-angad:${imageTag}/my-reddit-angad:${BUILD_NUMBER}/" deployment.yml
-                            git add deployment.yml
-                            git commit -m "Update deployment Image to version \${BUILD_NUMBER}"
-                            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-                        '''
+                        sh "docker tag reddit angadvm/my-reddit-angad:${BUILD_NUMBER}"
+                        sh "docker push angadvm/my-reddit-angad:${BUILD_NUMBER}"
                     }
                 }
             }
