@@ -16,6 +16,11 @@ pipeline{
                 sh "npm install"
             }
         }
+        stage('TRIVY FS SCAN') {
+            steps {
+                sh "trivy fs . > trivyfs.txt"
+            }
+        }
         stage("Docker Build & Push"){
             steps{
                 script{
@@ -25,6 +30,11 @@ pipeline{
                         sh "docker push angadvm/my-reddit-angad:${BUILD_NUMBER}"
                     }
                 }
+            }
+        }
+        stage("TRIVY IMAGE SCAN"){
+            steps{
+                sh "trivy image angadvm/my-reddit-angad:${BUILD_NUMBER} > trivyimage.txt"
             }
         }
     }
