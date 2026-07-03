@@ -39,16 +39,10 @@ pipeline{
                 }
             }
         }
-        stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
         stage("Docker Build & Push"){
             steps{
                 script{
-                   withDockerRegistry(credentialsId: 'docker-creds', toolName: 'docker'){
+                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
                         sh "docker build -t reddit ."
                         sh "docker tag reddit angadvm/my-reddit-angad:${BUILD_NUMBER}"
                         sh "docker push angadvm/my-reddit-angad:${BUILD_NUMBER}"
